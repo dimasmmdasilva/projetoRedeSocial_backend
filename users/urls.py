@@ -8,7 +8,7 @@ from .views import (
 
 # Criando o roteador de URLs para ViewSets
 router = DefaultRouter()
-router.register(r"tweets", TweetViewSet, basename="tweets")
+router.register(r"tweets", TweetViewSet, basename="tweets")  # Já assume "/api/tweets/"
 
 urlpatterns = [
     # Autenticação
@@ -24,7 +24,7 @@ urlpatterns = [
     # Perfil do usuário
     path("user/update-profile-image/", UpdateProfileImageView.as_view(), name="update-profile-image"),
     path("user/update-bio/", UpdateBioView.as_view(), name="update-bio"),
-
-    # Roteamento para o ViewSet de tweets
-    path("", include(router.urls)),
 ]
+
+# Adicionando as rotas do DefaultRouter sem duplicar o "api/"
+urlpatterns += router.urls

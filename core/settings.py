@@ -120,51 +120,11 @@ SIMPLE_JWT = {
 }
 
 # Configuração do CORS e CSRF
-def parse_env_list(var_name, default=""):
-    return [item.strip() for item in os.getenv(var_name, default).split(",") if item.strip()]
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
 
-CORS_ALLOWED_ORIGINS = parse_env_list("CORS_ALLOWED_ORIGINS", "http://localhost,http://127.0.0.1")
-CSRF_TRUSTED_ORIGINS = parse_env_list("CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "http://localhost,http://127.0.0.1").split(",")
 
 CORS_ALLOW_CREDENTIALS = True
 
-# Segurança para produção
-if not DEBUG:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    CSRF_COOKIE_SECURE = True
-    SESSION_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000  # 1 ano
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-
-# Logs para depuração
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs/django_debug.log",
-            "formatter": "verbose",
-        },
-        "console": {
-            "level": "DEBUG",
-            "class": "logging.StreamHandler",
-            "formatter": "verbose",
-        },
-    },
-    "formatters": {
-        "verbose": {
-            "format": "[{asctime}] {levelname} {message}",
-            "style": "{",
-        },
-    },
-    "loggers": {
-        "django": {
-            "handlers": ["file", "console"],
-            "level": "DEBUG",
-            "propagate": True,
-        },
-    },
-}
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True  # Permitindo para desenvolvimento
