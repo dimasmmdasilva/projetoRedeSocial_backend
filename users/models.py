@@ -14,7 +14,7 @@ class CustomUser(AbstractUser):
         null=True,
         default="profile_images/default.png"
     )
-    bio = models.TextField(blank=True, null=True, max_length=300)
+    bio = models.TextField(blank=True, null=True, max_length=100)
     followers = models.ManyToManyField("self", symmetrical=False, related_name="following", blank=True)
 
     def __str__(self):
@@ -55,7 +55,6 @@ class CustomUser(AbstractUser):
         tweets = Tweet.objects.filter(author__in=following).select_related("author").order_by('-created_at')
         logger.info(f"{self.username} carregou {tweets.count()} tweets de usuários que segue.")
         return tweets
-
 
 class Tweet(models.Model):
     """ Modelo para armazenar tweets, incluindo autor, conteúdo, curtidas e data de criação. """

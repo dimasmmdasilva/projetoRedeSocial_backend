@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
-
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
     confirm_password = serializers.CharField(write_only=True)
@@ -43,7 +42,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         logger.info(f"Novo usuário criado: {user.username} (ID: {user.id})")
         return user
 
-
 class UserSerializer(serializers.ModelSerializer):
     followers_count = serializers.SerializerMethodField()
     is_following = serializers.SerializerMethodField()
@@ -65,7 +63,6 @@ class UserSerializer(serializers.ModelSerializer):
         logger.debug(f"Usuário {request.user.username} está seguindo {obj.username}: {following}")
         return following
 
-
 class UpdateUserSerializer(serializers.ModelSerializer):
     profile_image = serializers.ImageField(required=False)
     bio = serializers.CharField(required=False)
@@ -84,7 +81,6 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 
         logger.info("Dados validados para atualização de perfil.")
         return data
-
 
 class TweetSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
