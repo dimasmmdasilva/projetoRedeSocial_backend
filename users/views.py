@@ -2,7 +2,7 @@ import logging
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -69,6 +69,15 @@ class LogoutView(APIView):
             except Exception:
                 return Response({"error": "Erro ao invalidar o token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Token inválido"}, status=status.HTTP_400_BAD_REQUEST)
+
+class UserDetailView(RetrieveAPIView):
+    """ Retorna os detalhes do usuário autenticado """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        return Response(UserSerializer(user, context={"request": request}).data, status=status.HTTP_200_OK)
 
 class UpdateProfileImageView(APIView):
     permission_classes = [IsAuthenticated]
