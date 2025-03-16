@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     RegisterView, LoginView, LogoutView,
     TweetViewSet, FollowingTweetsView, LikeTweetView, UnlikeTweetView,
-    UpdateProfileImageView, UpdateBioView, UserDetailView
+    UpdateProfileImageView, UpdateBioView, UserDetailView, DeleteTweetView
 )
 
 # Criando o roteador de URLs para ViewSets
@@ -23,6 +23,7 @@ urlpatterns = [
     path("tweets/following/", FollowingTweetsView.as_view(), name="following-tweets"),
     path("tweets/<int:tweet_id>/like/", LikeTweetView.as_view(), name="like-tweet"),
     path("tweets/<int:tweet_id>/unlike/", UnlikeTweetView.as_view(), name="unlike-tweet"),
+    path("tweets/<int:tweet_id>/delete/", DeleteTweetView.as_view(), name="delete-tweet"),
 
     # Perfil do usuário
     path("user/update-profile-image/", UpdateProfileImageView.as_view(), name="update-profile-image"),

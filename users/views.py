@@ -2,7 +2,7 @@ import logging
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView, ListAPIView
+from rest_framework.generics import RetrieveAPIView, ListAPIView, DestroyAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,6 +20,7 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
+# ------------------------ AUTENTICAÇÃO ------------------------
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -70,6 +71,7 @@ class LogoutView(APIView):
                 return Response({"error": "Erro ao invalidar o token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Token inválido"}, status=status.HTTP_400_BAD_REQUEST)
 
+# ------------------------ PERFIL DO USUÁRIO ------------------------
 class UserDetailView(RetrieveAPIView):
     """ Retorna os detalhes do usuário autenticado """
     permission_classes = [IsAuthenticated]
@@ -106,6 +108,7 @@ class UpdateBioView(APIView):
         user.save()
         return Response(UserSerializer(user, context={"request": request}).data, status=status.HTTP_200_OK)
 
+# ------------------------ TWEETS ------------------------
 class TweetViewSet(ModelViewSet):
     serializer_class = TweetSerializer
     permission_classes = [IsAuthenticated]
@@ -116,6 +119,24 @@ class TweetViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+# ------------------------ EXCLUSÃO DE TWEET ------------------------
+class DeleteTweetView(DestroyAPIView):
+    """
+    Permite que um usuário exclua um tweet se ele for o autor.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, tweet_id):
+        tweet = get_object_or_404(Tweet, id=tweet_id)
+
+        if tweet.author != request.user:
+            return Response({"error": "Você não tem permissão para excluir este tweet."}, status=status.HTTP_403_FORBIDDEN)
+
+        tweet.delete()
+        logger.info(f"Tweet {tweet_id} excluído por {request.user.username}")
+        return Response({"message": "Tweet excluído com sucesso!"}, status=status.HTTP_200_OK)
+
+# ------------------------ FEED DE TWEETS ------------------------
 class FollowingTweetsView(ListAPIView):
     serializer_class = TweetSerializer
     permission_classes = [IsAuthenticated]
@@ -123,11 +144,11 @@ class FollowingTweetsView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         following = user.following.all()
-        if not following.exists():
-            return Tweet.objects.none()
 
-        return Tweet.objects.filter(author__in=following).select_related("author").order_by('-created_at')
+        # Retorna tweets dos usuários seguidos + tweets do próprio usuário
+        return Tweet.objects.filter(author__in=following | CustomUser.objects.filter(id=user.id)).select_related("author").order_by('-created_at')
 
+# ------------------------ CURTIR E DESCURTIR ------------------------
 class LikeTweetView(APIView):
     permission_classes = [IsAuthenticated]
 
