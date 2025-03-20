@@ -11,16 +11,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import CustomUser, Tweet
-from .serializers import (
-    RegisterSerializer, 
-    UserSerializer, 
-    TweetSerializer, 
-    UpdateUserSerializer
-)
+from .serializers import RegisterSerializer, UserSerializer, TweetSerializer
 
 logger = logging.getLogger(__name__)
 
-# ------------------------ AUTENTICAÇÃO ------------------------
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -39,10 +33,8 @@ class LoginView(APIView):
         email = request.data.get("email")
         password = request.data.get("password")
 
-        user = None
-        if username:
-            user = authenticate(username=username, password=password)
-        elif email:
+        user = authenticate(username=username, password=password) if username else None
+        if not user and email:
             user = CustomUser.objects.filter(email=email).first()
             if user:
                 user = authenticate(username=user.username, password=password)
@@ -71,15 +63,41 @@ class LogoutView(APIView):
                 return Response({"error": "Erro ao invalidar o token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"error": "Token inválido"}, status=status.HTTP_400_BAD_REQUEST)
 
-# ------------------------ PERFIL DO USUÁRIO ------------------------
 class UserDetailView(RetrieveAPIView):
-    """ Retorna os detalhes do usuário autenticado """
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        return Response(UserSerializer(user, context={"request": request}).data, status=status.HTTP_200_OK)
+        data = UserSerializer(user, context={"request": request}).data
+        data["followers"] = [{"id": u.id, "username": u.username} for u in user.followers.all()]
+        data["following"] = [{"id": u.id, "username": u.username} for u in user.following.all()]
+        data["followers_count"] = user.followers.count()
+        data["following_count"] = user.following.count()
+        return Response(data, status=status.HTTP_200_OK)
+
+class UserListView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return CustomUser.objects.exclude(id=self.request.user.id).order_by("username")
+
+class FollowToggleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        user_to_follow = get_object_or_404(CustomUser, id=user_id)
+
+        if user_to_follow == request.user:
+            return Response({"error": "Você não pode seguir a si mesmo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if request.user.following.filter(id=user_to_follow.id).exists():
+            request.user.following.remove(user_to_follow)
+            return Response({"message": f"Você deixou de seguir {user_to_follow.username}."}, status=status.HTTP_200_OK)
+        else:
+            request.user.following.add(user_to_follow)
+            return Response({"message": f"Agora você está seguindo {user_to_follow.username}."}, status=status.HTTP_200_OK)
 
 class UpdateProfileImageView(APIView):
     permission_classes = [IsAuthenticated]
@@ -108,7 +126,6 @@ class UpdateBioView(APIView):
         user.save()
         return Response(UserSerializer(user, context={"request": request}).data, status=status.HTTP_200_OK)
 
-# ------------------------ TWEETS ------------------------
 class TweetViewSet(ModelViewSet):
     serializer_class = TweetSerializer
     permission_classes = [IsAuthenticated]
@@ -119,16 +136,11 @@ class TweetViewSet(ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-# ------------------------ EXCLUSÃO DE TWEET ------------------------
 class DeleteTweetView(DestroyAPIView):
-    """
-    Permite que um usuário exclua um tweet se ele for o autor.
-    """
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, tweet_id):
         tweet = get_object_or_404(Tweet, id=tweet_id)
-
         if tweet.author != request.user:
             return Response({"error": "Você não tem permissão para excluir este tweet."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -136,7 +148,6 @@ class DeleteTweetView(DestroyAPIView):
         logger.info(f"Tweet {tweet_id} excluído por {request.user.username}")
         return Response({"message": "Tweet excluído com sucesso!"}, status=status.HTTP_200_OK)
 
-# ------------------------ FEED DE TWEETS ------------------------
 class FollowingTweetsView(ListAPIView):
     serializer_class = TweetSerializer
     permission_classes = [IsAuthenticated]
@@ -144,17 +155,13 @@ class FollowingTweetsView(ListAPIView):
     def get_queryset(self):
         user = self.request.user
         following = user.following.all()
-
-        # Retorna tweets dos usuários seguidos + tweets do próprio usuário
         return Tweet.objects.filter(author__in=following | CustomUser.objects.filter(id=user.id)).select_related("author").order_by('-created_at')
 
-# ------------------------ CURTIR E DESCURTIR ------------------------
 class LikeTweetView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, tweet_id):
         tweet = get_object_or_404(Tweet, id=tweet_id)
-
         if request.user in tweet.likes.all():
             return Response({"error": "Você já curtiu este tweet!"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -166,7 +173,6 @@ class UnlikeTweetView(APIView):
 
     def post(self, request, tweet_id):
         tweet = get_object_or_404(Tweet, id=tweet_id)
-
         if request.user not in tweet.likes.all():
             return Response({"error": "Você ainda não curtiu este tweet!"}, status=status.HTTP_400_BAD_REQUEST)
 
