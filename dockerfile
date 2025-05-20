@@ -1,28 +1,19 @@
-# Etapa Base
-FROM python:3.10 AS base
-
-WORKDIR /app
+FROM python:3.13-slim AS base
 
 ENV PYTHONUNBUFFERED=1
 
-RUN apt-get update && apt-get install -y libpq-dev && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Etapa Final
-FROM base AS final
-
-WORKDIR /app
 
 COPY . .
 
 RUN mkdir -p /app/staticfiles /app/media
-
-# Coletar arquivos estáticos antes de iniciar o servidor
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--chdir", "/app", "core.wsgi:application", "--workers", "3", "--timeout", "120", "--preload"]
+CMD ["gunicorn", "core.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "120", "--preload"]
