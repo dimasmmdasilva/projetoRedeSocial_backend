@@ -12,7 +12,7 @@ if os.getenv("RENDER") is None:
         load_dotenv(dotenv_path)
 
 SECRET_KEY = os.getenv("SECRET_KEY", "default-secret-key")
-DEBUG = os.getenv("DEBUG", "False").strip().lower() in ("1", "true", "yes", "on")
+DEBUG = os.getenv("DEBUG", "").lower() == "true"
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 INSTALLED_APPS = [

@@ -3,7 +3,6 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Tweet
 
-# Configuração do Logger
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
@@ -17,7 +16,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "password", "confirm_password"]
 
     def validate(self, data):
-        """ Valida os dados antes do registro do usuário. """
         logger.info(f"Tentativa de registro com dados: {data}")
 
         if data["password"] != data["confirm_password"]:
@@ -36,7 +34,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        """ Cria um novo usuário sem os campos de confirmação. """
         validated_data.pop("confirm_password")
         user = User.objects.create_user(**validated_data)
         logger.info(f"Novo usuário criado: {user.username} (ID: {user.id})")
@@ -51,11 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "email", "profile_image", "bio", "followers_count", "is_following"]
 
     def get_followers_count(self, obj):
-        """ Retorna a contagem de seguidores ou 0 se o usuário não tiver seguidores. """
         return obj.followers.count() if obj.followers.exists() else 0
 
     def get_is_following(self, obj):
-        """ Verifica se o usuário autenticado segue o usuário alvo. Evita erro caso não haja um request. """
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return False
@@ -72,7 +67,6 @@ class UpdateUserSerializer(serializers.ModelSerializer):
         fields = ["profile_image", "bio"]
 
     def validate(self, data):
-        """ Valida se pelo menos um campo foi enviado para atualização. """
         logger.info(f"Tentativa de atualização de perfil: {data}")
 
         if "profile_image" not in data and "bio" not in data:
@@ -92,11 +86,9 @@ class TweetSerializer(serializers.ModelSerializer):
         fields = ["id", "content", "created_at", "author", "likes_count", "is_liked"]
 
     def get_likes_count(self, obj):
-        """ Retorna a quantidade de curtidas ou 0 se não houver curtidas. """
         return obj.likes.count() if obj.likes.exists() else 0
 
     def get_is_liked(self, obj):
-        """ Verifica se o usuário autenticado curtiu o tweet. Evita erro caso não haja um request. """
         request = self.context.get("request")
         if not request or not request.user.is_authenticated:
             return False
