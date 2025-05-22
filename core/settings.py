@@ -6,16 +6,12 @@ from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if os.getenv("RENDER") is None:
-    from dotenv import load_dotenv
-    dotenv_path = BASE_DIR / ".env"
-    if dotenv_path.exists():
-        load_dotenv(dotenv_path)
+# Configurações principais para ambiente em produção no Render
+SECRET_KEY = os.environ["SECRET_KEY"]
+DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
 
-SECRET_KEY = os.getenv("SECRET_KEY", "default-secret-key")
-DEBUG = os.getenv("DEBUG", "").lower() == "true"
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-
+# Aplicações instaladas
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -29,6 +25,7 @@ INSTALLED_APPS = [
     "users",
 ]
 
+# Middlewares
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -60,16 +57,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "core.wsgi.application"
 
+# Banco de dados via variável de ambiente DATABASE_URL
 DATABASES = {
     "default": dj_database_url.config(
-        default=os.getenv("DATABASE_URL"),
+        default=os.environ["DATABASE_URL"],
         conn_max_age=600,
         ssl_require=True,
     )
 }
 
+# Modelo de usuário customizado
 AUTH_USER_MODEL = "users.CustomUser"
 
+# Validações de senha
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -77,11 +77,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Internacionalização
 LANGUAGE_CODE = "pt-br"
 TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = True
 USE_TZ = True
 
+# Arquivos estáticos e mídia
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
@@ -90,6 +92,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# Django REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -99,6 +102,7 @@ REST_FRAMEWORK = {
     ],
 }
 
+# JWT
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
@@ -109,25 +113,14 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS")
-if CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS.split(",")
-else:
-    CORS_ALLOWED_ORIGINS = [
-        "https://mysocial-frontend.onrender.com"
-    ]
-
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS")
-if CSRF_TRUSTED_ORIGINS:
-    CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS.split(",")
-else:
-    CSRF_TRUSTED_ORIGINS = [
-        "https://mysocial-frontend.onrender.com"
-    ]
+# CORS e CSRF — obrigatórios para permitir conexão do frontend
+CORS_ALLOWED_ORIGINS = os.environ["CORS_ALLOWED_ORIGINS"].split(",")
+CSRF_TRUSTED_ORIGINS = os.environ["CSRF_TRUSTED_ORIGINS"].split(",")
 
 CORS_ALLOW_HEADERS = list(default_headers) + ["X-CSRFToken"]
 CORS_ALLOW_CREDENTIALS = True
 
+# Segurança (produção)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
