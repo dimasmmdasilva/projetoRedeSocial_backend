@@ -10,7 +10,7 @@ class CustomUser(AbstractUser):
         upload_to="profile_images/",
         blank=True,
         null=True,
-        default="profile_images/default.png"
+        default="../media/profile_images/default.png"
     )
     bio = models.TextField(blank=True, null=True, max_length=100)
     followers = models.ManyToManyField("self", symmetrical=False, related_name="following", blank=True)

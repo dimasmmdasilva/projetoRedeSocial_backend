@@ -110,8 +110,15 @@ SIMPLE_JWT = {
 }
 
 # CORS e CSRF — obrigatórios para permitir conexão do frontend
-CORS_ALLOWED_ORIGINS = os.environ["CORS_ALLOWED_ORIGINS"].split(",")
-CSRF_TRUSTED_ORIGINS = os.environ["CSRF_TRUSTED_ORIGINS"].split(",")
+CORS_ALLOWED_ORIGINS = os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+if not CORS_ALLOWED_ORIGINS[0]:
+    CORS_ALLOWED_ORIGINS = []
+
+if not CSRF_TRUSTED_ORIGINS[0]:
+    CSRF_TRUSTED_ORIGINS = []
+
 
 CORS_ALLOW_HEADERS = list(default_headers) + ["X-CSRFToken"]
 CORS_ALLOW_CREDENTIALS = True

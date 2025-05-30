@@ -19,4 +19,4 @@ class TweetAdmin(admin.ModelAdmin):
         return obj.likes.count()
     likes_count.short_description = "Curtidas"
 
-print("✅ Modelos registrados no Django Admin: CustomUser e Tweet.")
+print("Modelos registrados no Django Admin: CustomUser e Tweet.")
