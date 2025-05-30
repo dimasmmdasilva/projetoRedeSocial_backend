@@ -119,7 +119,6 @@ if not CORS_ALLOWED_ORIGINS[0]:
 if not CSRF_TRUSTED_ORIGINS[0]:
     CSRF_TRUSTED_ORIGINS = []
 
-
 CORS_ALLOW_HEADERS = list(default_headers) + ["X-CSRFToken"]
 CORS_ALLOW_CREDENTIALS = True
 
